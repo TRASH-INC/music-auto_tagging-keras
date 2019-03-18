@@ -4,7 +4,9 @@ import models as my_models
 from keras import backend as K
 import pdb
 import numpy as np
-
+from prepare_audio import compute_features
+from glob import glob
+import re
 
 def main(mode, conv_until=None):
     # setup stuff to build model
@@ -39,7 +41,24 @@ def main(mode, conv_until=None):
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Music Auto tagger')
+    parser.add_argument('--folder', metavar='DIR',
+                        help='path to the audio_files')
+
+    cmd_args = parser.parse_args()
+    audio_paths = glob(args.folder)
+    
     # main('tagger') # music tagger
+    model = main('tagger')
+    input_array = compute_features(audio_paths)
+    predictions = model.predict(input_array)
+    for i in range(min(5, predictions.shape[0])):
+        print(f'Prediction for fil {audio_paths[i]}\n: {predictions[i,:]}'
+                   
+
+
+    
 
     # load models that predict features from different level
     models = []
