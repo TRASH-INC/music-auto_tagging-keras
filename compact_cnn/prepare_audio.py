@@ -1,7 +1,7 @@
 # What you need is a mono-channel, 12kHz-sampled audio signals. 
 
 import librosa
-
+import numpy as np
 
 
 def compute_samples(audio_paths, sr, duration, mono=True):
@@ -12,7 +12,7 @@ def compute_samples(audio_paths, sr, duration, mono=True):
     audio_paths: list of paths for the audio files.
                 Any format supported by audioread will work.
     """
-    dast_list = 
+    data_list = [] 
     for path in audio_paths:
         src_loaded, sr = librosa.load(path, sr=sr, duration=duration, mono=mono) # 
         print(src.shape) # (N, )

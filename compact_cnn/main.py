@@ -4,9 +4,10 @@ import models as my_models
 from keras import backend as K
 import pdb
 import numpy as np
-from prepare_audio import compute_features
+from prepare_audio import compute_samples
 from glob import glob
-import re
+import re, os
+import argparse
 
 def main(mode, conv_until=None):
     # setup stuff to build model
@@ -43,45 +44,44 @@ def main(mode, conv_until=None):
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Music Auto tagger')
-    parser.add_argument('--folder', metavar='DIR',
+    parser.add_argument('--folder', type=str,
                         help='path to the audio_files')
-
+    parser.add_argument('--mode', default='tagger', type=str,
+                        help='Specify if you want to tag or compute feature')
     cmd_args = parser.parse_args()
-    audio_paths = glob(args.folder)
+    audio_paths = glob(os.path.join(cmd_args.folder, '*'))
+    print(f'folder: {audio_paths}')
+    audio_paths = [x for x in audio_paths if re.search('[.](mp3|wav)$', x) is not None]
+    input_array = compute_samples(audio_paths, sr=12000, duration=29, mono=True)
     
     # main('tagger') # music tagger
-    model = main('tagger')
-    input_array = compute_features(audio_paths)
-    predictions = model.predict(input_array)
-    for i in range(min(5, predictions.shape[0])):
-        print(f'Prediction for fil {audio_paths[i]}\n: {predictions[i,:]}'
+    if cmd_args.mode == 'tagger':
+        model = main('tagger')
+        predictions = model.predict(input_array)
+        for i in range(min(5, predictions.shape[0])):
+            print(f'Tags for file {audio_paths[i]}\n: {predictions[i,:]}')
                    
 
 
     
+    else:              
+        # load models that predict features from different level
+        models = []
+        model4 = main('feature')  # equal to main('feature', 4), highest-level feature extraction
+        model3 = main('feature', 3)  # low-level feature extraction.
+        model2 = main('feature', 2)  # lower-level..
+        model1 = main('feature', 1)  # lowerer...
+        model0 = main('feature', 0)  # lowererer.. no, lowest level feature extraction.
 
-    # load models that predict features from different level
-    models = []
-    model4 = main('feature')  # equal to main('feature', 4), highest-level feature extraction
-    model3 = main('feature', 3)  # low-level feature extraction.
-    model2 = main('feature', 2)  # lower-level..
-    model1 = main('feature', 1)  # lowerer...
-    model0 = main('feature', 0)  # lowererer.. no, lowest level feature extraction.
+        # prepare the models
+        models.append(model4)
+        models.append(model3)
+        models.append(model2)
+        models.append(model1)
+        models.append(model0)
 
-    # prepare the models
-    models.append(model4)
-    models.append(model3)
-    models.append(model2)
-    models.append(model1)
-    models.append(model0)
 
-    # source for example
-    src = np.load('1100103.clip.npy')  # (348000, )
-    src = src[np.newaxis, :]  # (1, 348000)
-    src = np.array([src]) # (1, 1, 348000) to make it batch
-
-    #
-    feat = [md.predict(src)[0] for md in models] # get 5 features, each is 32-dim
-    feat = np.array(feat).reshape(-1) # (160, ) (flatten)
-    # now use this feature for whatever MIR tasks.
-
+        # get features from each layer and conatenate them
+        feat = np.hstack([md.predict(input_array)[0] for md in models])
+        for i in range(min(5, feat.shape[0])):
+                print(f'features for file {audio_paths[i]}\n: {predictions[i,:]}')

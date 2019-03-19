@@ -6,6 +6,9 @@ from keras.layers import Layer, Dense, Activation, Flatten
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.pooling import GlobalAveragePooling2D
+import sys
+sys.path.append('/home/franck/TRASH/kapre')
+print(f'System path: {sys.path}')
 from kapre.time_frequency import Melspectrogram
 from kapre.utils import Normalization2D
 
