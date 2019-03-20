@@ -7,10 +7,17 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.pooling import GlobalAveragePooling2D
 import sys
-sys.path.append('/home/franck/TRASH/kapre')
-print(f'System path: {sys.path}')
+#sys.path.append('/home/franck/TRASH/kapre')
+#print(f'System path: {sys.path}')
 from kapre.time_frequency import Melspectrogram
 from kapre.utils import Normalization2D
+
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
 
 SR = 12000
 
@@ -102,7 +109,7 @@ def get_convBNeluMPdrop(num_conv_layers, nums_feat_maps,
                                     border_mode='same',
                                     init='he_normal'))
         # add BN, Activation, pooling
-        model.add(BatchNormalization(axis=1, mode=2))
+        model.add(BatchNormalization(axis=1, ))
         model.add(keras.layers.advanced_activations.ELU(alpha=1.0))  # TODO: select activation
 
         model.add(MaxPooling2D(pool_size=pool_sizes[conv_idx]))

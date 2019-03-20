@@ -14,8 +14,8 @@ def compute_samples(audio_paths, sr, duration, mono=True):
     """
     data_list = [] 
     for path in audio_paths:
-        src_loaded, sr = librosa.load(path, sr=sr, duration=duration, mono=mono) # 
-        print(src.shape) # (N, )
+        src, sr = librosa.load(path, sr=sr, duration=duration, mono=mono) # 
+        #print(src.shape) # (N, )
 
         if src.shape[0] < sr * duration:
             print('Concat zeros so that the shape becomes (348000, )')

@@ -8,6 +8,20 @@ from prepare_audio import compute_samples
 from glob import glob
 import re, os
 import argparse
+K.set_image_dim_ordering('th')
+
+
+TAGS = ['rock', 'pop', 'alternative', 'indie', 'electronic',
+            'female vocalists', 'dance', '00s', 'alternative rock', 'jazz',
+            'beautiful', 'metal', 'chillout', 'male vocalists',
+            'classic rock', 'soul', 'indie rock', 'Mellow', 'electronica',
+            '80s', 'folk', '90s', 'chill', 'instrumental', 'punk',
+            'oldies', 'blues', 'hard rock', 'ambient', 'acoustic',
+            'experimental', 'female vocalist', 'guitar', 'Hip-Hop',
+            '70s', 'party', 'country', 'easy listening',
+            'sexy', 'catchy', 'funk', 'electro', 'heavy metal',
+            'Progressive rock', '60s', 'rnb', 'indie pop',
+            'sad', 'House', 'happy']
 
 def main(mode, conv_until=None):
     # setup stuff to build model
@@ -23,6 +37,8 @@ def main(mode, conv_until=None):
     if conv_until is None:
         conv_until = 4
 
+
+    print(f'K.image_dim_ordering(): {K.image_dim_ordering()}')
     assert K.image_dim_ordering() == 'th', ('image_dim_ordering should be "th". ' +
                                             'open ~/.keras/keras.json to change it.')
 
@@ -48,9 +64,11 @@ if __name__ == '__main__':
                         help='path to the audio_files')
     parser.add_argument('--mode', default='tagger', type=str,
                         help='Specify if you want to tag or compute feature')
+    parser.add_argument('--output-dir', default='data/feature_dataframes', type=str,
+                        help='Output dir where to store the features dataframe. only used if mode="feature"')
     cmd_args = parser.parse_args()
     audio_paths = glob(os.path.join(cmd_args.folder, '*'))
-    print(f'folder: {audio_paths}')
+    
     audio_paths = [x for x in audio_paths if re.search('[.](mp3|wav)$', x) is not None]
     input_array = compute_samples(audio_paths, sr=12000, duration=29, mono=True)
     
@@ -58,8 +76,10 @@ if __name__ == '__main__':
     if cmd_args.mode == 'tagger':
         model = main('tagger')
         predictions = model.predict(input_array)
-        for i in range(min(5, predictions.shape[0])):
-            print(f'Tags for file {audio_paths[i]}\n: {predictions[i,:]}')
+        print(f'Predictions shape: {predictions.shape}')
+        for i in range(min(100, predictions.shape[0])):
+            detected_tags = [TAGS[x] for x in range(predictions.shape[1]) if predictions[i,x]] 
+            print(f'Tags for file {audio_paths[i]}\n: {detected_tags}')
                    
 
 
@@ -82,6 +102,11 @@ if __name__ == '__main__':
 
 
         # get features from each layer and conatenate them
-        feat = np.hstack([md.predict(input_array)[0] for md in models])
-        for i in range(min(5, feat.shape[0])):
-                print(f'features for file {audio_paths[i]}\n: {predictions[i,:]}')
+        feat = np.hstack([md.predict(input_array) for md in models])
+        feat_df = pd.DataFrame(feat)
+        feat_df['track_name'] = [os.path.basename(x) for x in audio_paths]
+        output_name = datetime.now().split('.')[0].replace(' ', '_') + '.csv'
+        feat_df.to_csv(os.path.join(cmd_args.output_dir, output_name))
+        print(f'Files saved to data/feature_dataframes/{output_name}')
+        #for i in range(min(5, feat.shape[0])):
+        #        print(f'features for file {audio_paths[i]}\n: {predictions[i,:]}')
