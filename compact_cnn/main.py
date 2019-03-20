@@ -9,7 +9,8 @@ from glob import glob
 import re, os
 import argparse
 K.set_image_dim_ordering('th')
-
+import pandas as pd
+from datetime import datetime
 
 TAGS = ['rock', 'pop', 'alternative', 'indie', 'electronic',
             'female vocalists', 'dance', '00s', 'alternative rock', 'jazz',
@@ -57,6 +58,11 @@ def main(mode, conv_until=None):
     return model
 
 
+def sort_result(tags, preds):
+    result = zip(tags, preds)
+    sorted_result = sorted(result, key=lambda x: x[1], reverse=True)
+    return [(name, '%5.3f' % score) for name, score in sorted_result]
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Music Auto tagger')
@@ -66,6 +72,9 @@ if __name__ == '__main__':
                         help='Specify if you want to tag or compute feature')
     parser.add_argument('--output-dir', default='data/feature_dataframes', type=str,
                         help='Output dir where to store the features dataframe. only used if mode="feature"')
+    parser.add_argument('--with-sigmoid', default=False, type=bool,
+                        help='apply sigmoid to ')
+    
     cmd_args = parser.parse_args()
     audio_paths = glob(os.path.join(cmd_args.folder, '*'))
     
@@ -78,9 +87,13 @@ if __name__ == '__main__':
         predictions = model.predict(input_array)
         print(f'Predictions shape: {predictions.shape}')
         for i in range(min(100, predictions.shape[0])):
-            detected_tags = [TAGS[x] for x in range(predictions.shape[1]) if predictions[i,x]] 
-            print(f'Tags for file {audio_paths[i]}\n: {detected_tags}')
-                   
+            #detected_tags = [TAGS[x] for x in range(predictions.shape[1]) if predictions[i,x]] 
+            #print(f'Tags for file {audio_paths[i]}\n: {detected_tags}')
+            sorted_result = sort_result(TAGS, predictions[i, :].tolist())
+            print(audio_paths[i])
+            print(sorted_result[:5])
+            print(sorted_result[5:10])
+            print(' ')       
 
 
     
@@ -105,7 +118,7 @@ if __name__ == '__main__':
         feat = np.hstack([md.predict(input_array) for md in models])
         feat_df = pd.DataFrame(feat)
         feat_df['track_name'] = [os.path.basename(x) for x in audio_paths]
-        output_name = datetime.now().split('.')[0].replace(' ', '_') + '.csv'
+        output_name = str(datetime.now()).split('.')[0].replace(' ', '_') + '.csv'
         feat_df.to_csv(os.path.join(cmd_args.output_dir, output_name))
         print(f'Files saved to data/feature_dataframes/{output_name}')
         #for i in range(min(5, feat.shape[0])):
