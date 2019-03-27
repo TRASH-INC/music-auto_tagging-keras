@@ -5,6 +5,10 @@ from music_tagger_cnn import MusicTaggerCNN
 from music_tagger_crnn import MusicTaggerCRNN
 import audio_processor as ap
 import pdb
+import argparse
+from glob import glob
+import os
+import re
 
 def sort_result(tags, preds):
     result = zip(tags, preds)
@@ -27,12 +31,25 @@ def main(net):
     is affected by batch. Use multiple, different data 
     samples together (at least 4) for reliable prediction.'''
 
+    parser = argparse.ArgumentParser(description='Music tagging')
+    parser.add_argument('--folder', 
+                        help='path to the audio files to tag')
+    cmd_args = parser.parse_args()
+
+    audio_paths = glob(os.path.join(cmd_args.folder, '*'))
+    #print('Audio Paths: {}'.format(audio_paths))
+    audio_paths = [ x for x in audio_paths if re.search('[.](mp3|wav)', x)]
+    
     print('Running main() with network: %s and backend: %s' % (net, K._BACKEND))
     # setting
-    audio_paths = ['data/bensound-cute.mp3',
-                   'data/bensound-actionable.mp3',
-                   'data/bensound-dubstep.mp3',
-                   'data/bensound-thejazzpiano.mp3']
+    if cmd_args.folder is None: 
+        audio_paths = ['data/bensound-cute.mp3',
+                       'data/bensound-actionable.mp3',
+                       'data/bensound-dubstep.mp3',
+                       'data/bensound-thejazzpiano.mp3']
+
+
+        
     melgram_paths = ['data/bensound-cute.npy',
                      'data/bensound-actionable.npy',
                      'data/bensound-dubstep.npy',
@@ -86,6 +103,7 @@ def main(net):
 
 if __name__ == '__main__':
 
-    networks = ['cnn', 'crnn']
+    #networks = ['cnn', 'crnn']
+    networks = ['crnn']
     for net in networks:
         main(net)
